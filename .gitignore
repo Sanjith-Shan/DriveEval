@@ -1,0 +1,24 @@
+# Build trees
+build/
+build-fuzz/
+out/
+cmake-build-*/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Dataset and campaign outputs.
+# Argoverse 2 is CC BY-NC-SA 4.0; no shard is redistributed here.
+# See README "Reproducing" to regenerate all of this.
+data/raw/
+data/cache/
+data/results/
+
+# Local scratch
+/tmp/
+*.log
+.DS_Store
