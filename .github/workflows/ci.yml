@@ -1,0 +1,85 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  cpp:
+    name: C++ ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: release
+            cmake_args: "-DCMAKE_BUILD_TYPE=Release"
+          # The sanitiser build is the one that gives the reader's bounds checks
+          # teeth: the cache accessors are unchecked by design, so ASan on the
+          # random-mutation test is what proves the validator is doing its job.
+          - name: asan-ubsan
+            cmake_args: "-DCMAKE_BUILD_TYPE=RelWithDebInfo -DSB_SANITIZE=ON"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build cmake clang
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+            -DSB_NATIVE=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+            ${{ matrix.cmake_args }}
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+        env:
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+          ASAN_OPTIONS: detect_leaks=0
+
+  fuzz:
+    name: fuzz smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build cmake clang
+      - name: Build fuzz targets
+        run: |
+          cmake -S . -B build-fuzz -G Ninja \
+            -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSB_BUILD_FUZZ=ON \
+            -DSB_BUILD_TESTS=OFF -DSB_ENABLE_OSQP=OFF -DSB_NATIVE=OFF \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+          cmake --build build-fuzz
+      # A short run on every push, not a campaign. Long enough to catch a
+      # regression that makes the reader accept something it should reject.
+      - name: Fuzz the cache reader
+        run: ./build-fuzz/fuzz_cache_reader -max_total_time=60 -print_final_stats=1 fuzz/corpus
+      - name: Fuzz the map layer
+        run: ./build-fuzz/fuzz_lane_graph -max_total_time=60 -print_final_stats=1 fuzz/corpus
+
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Test
+        run: python -m pytest tests/ -q
+        env:
+          PYTHONPATH: python
+      - name: Check the C++ and Python cache layouts still agree
+        run: |
+          cmake -S . -B build -G Ninja -DSB_BUILD_TESTS=OFF -DSB_ENABLE_OSQP=OFF \
+            -DSB_NATIVE=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+          cmake --build build --target sb_cacheinfo
+          python -m pytest tests/test_cache_abi.py -q
+        env:
+          PYTHONPATH: python
