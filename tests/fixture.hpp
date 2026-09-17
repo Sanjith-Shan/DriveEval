@@ -1,9 +1,9 @@
 // Builds scenario-cache byte buffers in memory, so the C++ tests need no data
-// files and no network. The builder mirrors python/switchback/cache.py's
+// files and no network. The builder mirrors python/driveeval/cache.py's
 // writer; tests/test_cache.cpp checks that a buffer it produces reads back
 // identically, which is what keeps the two writers honest about the layout.
-#ifndef SWITCHBACK_TESTS_FIXTURE_HPP
-#define SWITCHBACK_TESTS_FIXTURE_HPP
+#ifndef DRIVEEVAL_TESTS_FIXTURE_HPP
+#define DRIVEEVAL_TESTS_FIXTURE_HPP
 
 #include <algorithm>
 #include <array>
@@ -12,11 +12,11 @@
 #include <string>
 #include <vector>
 
-#include "switchback/io/cache_format.hpp"
+#include "driveeval/io/cache_format.hpp"
 
-namespace sb::test {
+namespace drive::test {
 
-using namespace sb::io;
+using namespace drive::io;
 
 struct LaneSpec {
   std::vector<std::pair<float, float>> centerline;
@@ -241,6 +241,6 @@ inline std::vector<unsigned char> ScenarioBuilder::shard(u32 capabilities) const
   return out;
 }
 
-}  // namespace sb::test
+}  // namespace drive::test
 
 #endif

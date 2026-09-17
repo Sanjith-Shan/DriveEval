@@ -1,17 +1,17 @@
 # Statistics
 
-This document explains how Switchback turns a table of run outcomes into
+This document explains how DriveEval turns a table of run outcomes into
 claims, and — more importantly — what it refuses to claim. It is the part of
 the project that is the contribution; the planner is the subject of the
 measurement, not the point of it.
 
-Everything here is implemented in `python/switchback/mine/` and checked in
+Everything here is implemented in `python/driveeval/mine/` and checked in
 `tests/test_stats.py`, `tests/test_subgroups.py`, `tests/test_gate.py`. Where a
 number appears below, it was measured by running that code, not estimated.
 
 **Lineage.** The cluster bootstrap is ported from
 [ProvingGround](../../ProvingGround), which resamples *tasks* rather than
-trials for exactly the reason Switchback resamples *scenarios* rather than
+trials for exactly the reason DriveEval resamples *scenarios* rather than
 timesteps. The regression gate's semantics are ported from
 [Dyno](../../Dyno) — "overlapping confidence intervals are never a regression"
 is Dyno's sentence, and the `reason`-string-on-every-verdict discipline, the
@@ -47,7 +47,7 @@ cluster bootstrap returns one wider than 0.35. **The honest interval is more
 than four times wider, and it is the wider one that is true.**
 
 That test is the single most important one in the project. If that inequality
-ever stops holding, every confidence interval Switchback publishes is too
+ever stops holding, every confidence interval DriveEval publishes is too
 narrow and every finding needs re-checking.
 
 ### Where clustering does *not* apply, and why that is not a loophole
@@ -129,7 +129,7 @@ Given 50 features and three levels of conjunction it will find *something* in
 pure noise, and whatever it finds will have a small p-value, because the search
 selected it for exactly that.
 
-Switchback splits every scenario into a discovery half and a confirmation half.
+DriveEval splits every scenario into a discovery half and a confirmation half.
 **The beam runs on discovery rows only. Every surviving rule is re-measured on
 confirmation rows, and only confirmation numbers are reportable.** The
 `failure_classes` table carries both, and its schema comment says which is
@@ -147,7 +147,7 @@ split = "discovery" if v % 2 == 0 else "confirmation"
 
 It is a pure function of the scenario id. Nothing else feeds it: no seed, no
 row order, no wall clock, no dataset name, no run. It is computed once, in
-`switchback/db/load.py`, at feature-load time, and it is never recomputed
+`driveeval/db/load.py`, at feature-load time, and it is never recomputed
 anywhere else.
 
 That matters for one reason. The easiest way to produce an impressive mining
@@ -390,7 +390,7 @@ uncorrected picture, and `GateResult.expected_false_positives` (Dyno's
 ### Divergences from Dyno, and what they cost
 
 **Dyno compares two independently bootstrapped medians and asks whether the
-intervals overlap. Switchback bootstraps the paired delta and asks whether its
+intervals overlap. DriveEval bootstraps the paired delta and asks whether its
 interval contains 0.** Dyno could not do the latter — its repeats are not
 matched to anything — whereas here the same scenario is replayed under both
 configurations, so the pairing is real and discarding it would inflate every
@@ -399,7 +399,7 @@ interval by the between-scenario variance both arms share.
 a large per-scenario level shared by both arms, the paired interval is under 1%
 of the width of the marginal one.
 
-The two rules are **not equivalent**, and the difference is not in Switchback's
+The two rules are **not equivalent**, and the difference is not in DriveEval's
 favour. Two disjoint 95% intervals is a stricter test than one 95% delta
 interval excluding 0. So on the significance axis alone this gate is more
 willing to speak than Dyno's. The BH correction and the optional materiality

@@ -1,4 +1,4 @@
-"""Tests for switchback.viz.
+"""Tests for driveeval.viz.
 
 These check the things a reviewer would otherwise have to check by squinting at
 a PNG: that the file is non-trivial, that exactly the expected footprints were
@@ -25,14 +25,14 @@ _PY = Path(__file__).resolve().parents[1] / "python"
 if str(_PY) not in sys.path:
     sys.path.insert(0, str(_PY))
 
-# Must precede any pyplot import, directly or through switchback.viz.
+# Must precede any pyplot import, directly or through driveeval.viz.
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt  # noqa: E402
 
-from switchback import cache  # noqa: E402
-from switchback.report.assets import PALETTE  # noqa: E402
-from switchback.viz import (  # noqa: E402
+from driveeval import cache  # noqa: E402
+from driveeval.report.assets import PALETTE  # noqa: E402
+from driveeval.viz import (  # noqa: E402
     DEFAULT_SHOW,
     EGO_FOOTPRINT,
     SHOW_FROM_CACHE,
@@ -107,7 +107,7 @@ def test_patch_count_is_exactly_what_the_dump_implies(traj):
     agent.
     """
     ax = render_scenario(traj)
-    stats = ax.switchback_stats
+    stats = ax.driveeval_stats
     step = stats.step
 
     n_drivable = sum(1 for p in traj["polygons"] if p["kind"] == "drivable_area")
@@ -134,11 +134,11 @@ def test_invalid_timestep_agents_are_not_drawn(traj):
     not merely that the count happens to match.
     """
     ax = render_scenario(traj)
-    step = ax.switchback_stats.step
+    step = ax.driveeval_stats.step
 
     invalid = [a for a in traj["agents"] if not a["states"][step]["valid"]]
     assert invalid, "fixture must contain an agent invalid at the rendered step"
-    assert ax.switchback_stats.n_agents_skipped_invalid == len(invalid)
+    assert ax.driveeval_stats.n_agents_skipped_invalid == len(invalid)
 
     wanted = {(round(a["states"][step]["x"], 3), round(a["states"][step]["y"], 3))
               for a in traj["agents"] if a["states"][step]["valid"]}
@@ -181,7 +181,7 @@ def test_planned_and_logged_are_two_labelled_lines(traj):
 def test_chosen_and_refined_are_drawn_as_different_lines(traj):
     """The smoother's output must not be conflated with the lattice candidate."""
     ax = render_scenario(traj)
-    stats = ax.switchback_stats
+    stats = ax.driveeval_stats
     assert stats.n_candidates == len(
         min(traj["plans"], key=lambda p: abs(p["t"] - stats.t))["candidates"])
 
@@ -200,15 +200,15 @@ def test_ego_box_uses_the_documented_footprint(traj):
 
 def test_hidden_layers_are_really_hidden(traj):
     ax = render_scenario(traj, show=DEFAULT_SHOW - {"lattice", "chosen", "refined"})
-    assert ax.switchback_stats.n_candidates == 0
+    assert ax.driveeval_stats.n_candidates == 0
     for role in ("lattice", "chosen", "refined"):
         assert not [ln for ln in ax.lines if ln.get_color() == PALETTE[role]], role
 
 
 def test_time_selection_picks_the_event_by_default(traj):
-    default = render_scenario(traj).switchback_stats
-    explicit = render_scenario(traj, t=traj["events"][0]["t"]).switchback_stats
-    at_start = render_scenario(traj, t=0.0).switchback_stats
+    default = render_scenario(traj).driveeval_stats
+    explicit = render_scenario(traj, t=traj["events"][0]["t"]).driveeval_stats
+    at_start = render_scenario(traj, t=0.0).driveeval_stats
     assert default.t == pytest.approx(explicit.t)
     assert at_start.step == 0
     assert default.step != 0
@@ -327,7 +327,7 @@ def _tiny_shard(path: Path) -> Path:
 
 
 def test_shard_scenario_renders_its_map_and_agents(tmp_path):
-    shard = _tiny_shard(tmp_path / "tiny.sbsc")
+    shard = _tiny_shard(tmp_path / "tiny.scn")
     traj = traj_from_shard(shard)
 
     assert traj["schema"] == 1
@@ -336,7 +336,7 @@ def test_shard_scenario_renders_its_map_and_agents(tmp_path):
     assert [a["type"] for a in traj["agents"]] == ["pedestrian"]
 
     ax = render_scenario(traj, t=0.0, show=SHOW_FROM_CACHE)
-    stats = ax.switchback_stats
+    stats = ax.driveeval_stats
     assert stats.n_drivable == 1
     assert stats.n_agents_drawn == 1
     # No plan exists in a cache shard, so nothing plan-shaped may be drawn.
@@ -344,6 +344,6 @@ def test_shard_scenario_renders_its_map_and_agents(tmp_path):
     assert not [ln for ln in ax.lines if ln.get_color() == PALETTE["accent"]]
 
     # And the lost half of the pedestrian track stays undrawn.
-    late = render_scenario(traj, t=1.0, show=SHOW_FROM_CACHE).switchback_stats
+    late = render_scenario(traj, t=1.0, show=SHOW_FROM_CACHE).driveeval_stats
     assert late.n_agents_drawn == 0
     assert late.n_agents_skipped_invalid == 1

@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-SHARDS=$(ls data/cache/av2_val/*.sbsc | tr '\n' ',' | sed 's/,$//')
+SHARDS=$(ls data/cache/av2_val/*.scn | tr '\n' ',' | sed 's/,$//')
 OUT=${OUT:-data/results}
 JOBS=${JOBS:-10}
 # Scenarios per headline run. 8000 is the default because it powers the paired
@@ -18,7 +18,7 @@ N=${N:-8000}
 SWEEP_N=${SWEEP_N:-3000}
 GIT=$(git rev-parse --short HEAD 2>/dev/null || echo nogit)
 HW="Apple M3 Pro (12 core), -O3 -mcpu=native, process not pinned"
-B=./build/sb_batch
+B=./build/drive_batch
 mkdir -p "$OUT"
 
 run() {
@@ -51,10 +51,10 @@ run pursuit_reactive --config-name pure_pursuit --mode reactive --pure-pursuit -
 # 4. Cost-weight sweep, for the regression gate. One weight at a time so the
 #    gate has something interpretable to attribute a change to.
 #
-#    The optimiser head to head lives in sb_bench, which hands iLQR and OSQP
+#    The optimiser head to head lives in drive_bench, which hands iLQR and OSQP
 #    identical problems; comparing two whole runs would confound the solvers
 #    with the different trajectories they steer the scenarios into. Prediction
-#    and refinement attribution live in sb_ablate, which does them per scenario
+#    and refinement attribution live in drive_ablate, which does them per scenario
 #    as counterfactuals rather than as separate batches.
 for w in clearance=16.0 progress=3.0; do
   name=$(echo "$w" | tr '=.' '__')

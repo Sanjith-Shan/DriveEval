@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 
 #include "fixture.hpp"
-#include "switchback/io/cache_reader.hpp"
-#include "switchback/plan/bicycle.hpp"
-#include "switchback/sim/tracker.hpp"
-#include "switchback/sim/world.hpp"
+#include "driveeval/io/cache_reader.hpp"
+#include "driveeval/plan/bicycle.hpp"
+#include "driveeval/sim/tracker.hpp"
+#include "driveeval/sim/world.hpp"
 
-using namespace sb;
-using namespace sb::sim;
+using namespace drive;
+using namespace drive::sim;
 
 namespace {
 

@@ -23,7 +23,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-from switchback.report.build import build_report  # noqa: E402
+from driveeval.report.build import build_report  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:

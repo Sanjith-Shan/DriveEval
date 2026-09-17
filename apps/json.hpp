@@ -1,14 +1,14 @@
 // Minimal JSON writer. The trajectory dump is the only JSON this project
 // produces and its shape is fixed by docs/CONTRACTS.md, so a streaming writer
 // with no DOM is enough and keeps the dependency list short.
-#ifndef SWITCHBACK_APPS_JSON_HPP
-#define SWITCHBACK_APPS_JSON_HPP
+#ifndef DRIVEEVAL_APPS_JSON_HPP
+#define DRIVEEVAL_APPS_JSON_HPP
 
 #include <cstdio>
 #include <string>
 #include <vector>
 
-namespace sb::json {
+namespace drive::json {
 
 class Writer {
  public:
@@ -85,6 +85,6 @@ class Writer {
   bool suppress_comma_{false};
 };
 
-}  // namespace sb::json
+}  // namespace drive::json
 
 #endif

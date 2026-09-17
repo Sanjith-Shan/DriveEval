@@ -1,11 +1,11 @@
-#include "switchback/plan/planner.hpp"
+#include "driveeval/plan/planner.hpp"
 
 #include <chrono>
 #include <cstdio>
 #include <limits>
 #include <string>
 
-namespace sb::plan {
+namespace drive::plan {
 
 std::string PlannerConfig::toJson() const {
   std::string out = "{\"weights\":";
@@ -195,4 +195,4 @@ const PlanOutput& Planner::plan(const EgoState& ego, Scalar ego_accel, std::size
   return out_;
 }
 
-}  // namespace sb::plan
+}  // namespace drive::plan

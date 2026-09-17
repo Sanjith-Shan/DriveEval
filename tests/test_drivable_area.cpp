@@ -3,10 +3,10 @@
 #include <random>
 
 #include "fixture.hpp"
-#include "switchback/io/cache_reader.hpp"
-#include "switchback/map/drivable_area.hpp"
+#include "driveeval/io/cache_reader.hpp"
+#include "driveeval/map/drivable_area.hpp"
 
-using namespace sb;
+using namespace drive;
 
 namespace {
 map::DrivableArea buildL() {

@@ -1,11 +1,11 @@
-#include "switchback/sim/world.hpp"
+#include "driveeval/sim/world.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <string>
 
-namespace sb::sim {
+namespace drive::sim {
 
 const char* toString(AgentMode m) {
   switch (m) {
@@ -234,4 +234,4 @@ void World::step(std::size_t step, const Box2& ego_box, const EgoState& ego, Sca
   }
 }
 
-}  // namespace sb::sim
+}  // namespace drive::sim

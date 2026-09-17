@@ -1,8 +1,8 @@
-#include "switchback/core/trajectory.hpp"
+#include "driveeval/core/trajectory.hpp"
 
 #include <cmath>
 
-namespace sb {
+namespace drive {
 
 void Trajectory::differentiate() {
   const std::size_t n = pts.size();
@@ -57,4 +57,4 @@ void Trajectory::differentiate() {
   }
 }
 
-}  // namespace sb
+}  // namespace drive

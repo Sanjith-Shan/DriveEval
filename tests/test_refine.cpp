@@ -1,14 +1,14 @@
 #include <gtest/gtest.h>
 
 #include "fixture.hpp"
-#include "switchback/io/cache_reader.hpp"
-#include "switchback/map/route_search.hpp"
-#include "switchback/plan/lattice.hpp"
-#include "switchback/plan/refine.hpp"
-#include "switchback/sim/world.hpp"
+#include "driveeval/io/cache_reader.hpp"
+#include "driveeval/map/route_search.hpp"
+#include "driveeval/plan/lattice.hpp"
+#include "driveeval/plan/refine.hpp"
+#include "driveeval/sim/world.hpp"
 
-using namespace sb;
-using namespace sb::plan;
+using namespace drive;
+using namespace drive::plan;
 
 namespace {
 
@@ -122,7 +122,7 @@ TEST(Refine, IlqrSteersAroundAStationaryObstacle) {
       << "refinement produced a trajectory that intersects a stationary vehicle";
 }
 
-#if SB_WITH_OSQP
+#if DE_WITH_OSQP
 TEST(Refine, OsqpAndIlqrAgreeOnTheSameProblem) {
   // The head-to-head only means anything if both solve the same problem. They
   // need not find the same trajectory, but neither may be worse than the

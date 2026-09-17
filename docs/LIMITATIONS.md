@@ -70,7 +70,7 @@ published number depends on the approximation, but the planner's behaviour does.
 
 **Prediction is constant velocity.** The planner predicts every agent as holding
 its current velocity over a 5 s horizon. That is a weak model and it is the
-model on purpose, so that `sb_ablate --prediction logged_oracle` can say how
+model on purpose, so that `drive_ablate --prediction logged_oracle` can say how
 much of a given failure is a prediction failure rather than a planning failure.
 
 **The reactive model's leader detection is a local-frame approximation.** An

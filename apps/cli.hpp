@@ -1,8 +1,8 @@
-// Minimal flag parsing shared by the sb_* tools. Deliberately small: the tools
+// Minimal flag parsing shared by the drive_* tools. Deliberately small: the tools
 // take a handful of flags each and a real options library would be the largest
 // dependency in the project.
-#ifndef SWITCHBACK_APPS_CLI_HPP
-#define SWITCHBACK_APPS_CLI_HPP
+#ifndef DRIVEEVAL_APPS_CLI_HPP
+#define DRIVEEVAL_APPS_CLI_HPP
 
 #include <charconv>
 #include <cstdlib>
@@ -13,7 +13,7 @@
 #include <string_view>
 #include <vector>
 
-namespace sb::cli {
+namespace drive::cli {
 
 class Args {
  public:
@@ -47,7 +47,7 @@ class Args {
     try {
       return std::stod(it->second);
     } catch (...) {
-      std::cerr << "switchback: --" << k << " expects a number, got '" << it->second << "'\n";
+      std::cerr << "driveeval: --" << k << " expects a number, got '" << it->second << "'\n";
       std::exit(2);
     }
   }
@@ -67,7 +67,7 @@ class Args {
         if (k == kk) { found = true; break; }
       }
       if (!found) {
-        std::cerr << "switchback: unknown flag --" << k << "\n";
+        std::cerr << "driveeval: unknown flag --" << k << "\n";
         std::exit(2);
       }
     }
@@ -78,6 +78,6 @@ class Args {
   std::vector<std::string> positional_;
 };
 
-}  // namespace sb::cli
+}  // namespace drive::cli
 
 #endif

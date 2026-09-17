@@ -1,9 +1,9 @@
-#include "switchback/plan/reference_path.hpp"
+#include "driveeval/plan/reference_path.hpp"
 
 #include <algorithm>
 #include <cmath>
 
-namespace sb::plan {
+namespace drive::plan {
 namespace {
 
 // Hermite-style smoothstep, zero derivative at both ends, so a lane change
@@ -212,4 +212,4 @@ FrenetPoint ReferencePath::toFrenet(const Vec2& p, Scalar heading, Scalar v) con
   return f;
 }
 
-}  // namespace sb::plan
+}  // namespace drive::plan

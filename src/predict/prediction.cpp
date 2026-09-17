@@ -1,9 +1,9 @@
-#include "switchback/predict/prediction.hpp"
+#include "driveeval/predict/prediction.hpp"
 
 #include <algorithm>
 #include <cmath>
 
-namespace sb::predict {
+namespace drive::predict {
 
 const char* toString(Model m) {
   switch (m) {
@@ -163,4 +163,4 @@ void PredictionSet::fill(const sim::World& world, const map::LaneGraph& graph, s
   }
 }
 
-}  // namespace sb::predict
+}  // namespace drive::predict

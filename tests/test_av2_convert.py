@@ -19,7 +19,7 @@ import pytest
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "python"))
 
-from switchback.av2.convert import (  # noqa: E402
+from driveeval.av2.convert import (  # noqa: E402
     AGENT_VEHICLE,
     CAPABILITIES,
     FOOTPRINTS,
@@ -30,12 +30,12 @@ from switchback.av2.convert import (  # noqa: E402
     convert_scenario,
     scenario_files,
 )
-from switchback.av2.speed_prior import (  # noqa: E402
+from driveeval.av2.speed_prior import (  # noqa: E402
     FALLBACK_INTERSECTION_MPS,
     FALLBACK_ROAD_MPS,
     SPEED_CLAMP_MPS,
 )
-from switchback.cache import (  # noqa: E402
+from driveeval.cache import (  # noqa: E402
     CAP_DRIVABLE_AREA,
     CAP_LANE_CONNECTIVITY,
     CAP_SPEED_LIMITS,
@@ -64,7 +64,7 @@ def result():
 @pytest.fixture(scope="module")
 def roundtrip(result, tmp_path_factory):
     """The scenario as it comes back out of a real shard file."""
-    path = tmp_path_factory.mktemp("shard") / "av2_val_0000.sbsc"
+    path = tmp_path_factory.mktemp("shard") / "av2_val_0000.scn"
     write_shard(path, [result.scenario], source=SOURCE_AV2, capabilities=CAPABILITIES)
     reader = ShardReader(path)
     return reader, reader.scenario(0)
@@ -266,7 +266,7 @@ def test_city_enum():
 
 def test_shard_holding_many_scenarios_indexes_each(result, tmp_path):
     """Index offsets must stay right once more than one blob is in the file."""
-    path = tmp_path / "multi.sbsc"
+    path = tmp_path / "multi.scn"
     write_shard(path, [result.scenario] * 3, source=SOURCE_AV2, capabilities=CAPABILITIES)
     reader = ShardReader(path)
     assert len(reader) == 3
@@ -284,9 +284,9 @@ def test_min_sample_speed_knob_moves_lanes_off_the_clamp_floor(result):
     m/s clamp floor. That is the decided rule, so the default must not change
     the cache; the knob exists so a sweep can measure the alternative.
     """
-    from switchback.av2.convert import AGENT_BUS, AGENT_VEHICLE
-    from switchback.av2.speed_prior import lane_speed_priors
-    from switchback.cache import LANE_IS_INTERSECTION
+    from driveeval.av2.convert import AGENT_BUS, AGENT_VEHICLE
+    from driveeval.av2.speed_prior import lane_speed_priors
+    from driveeval.cache import LANE_IS_INTERSECTION
 
     s = result.scenario
     ev = np.isin(s.agents["type"], (AGENT_VEHICLE, AGENT_BUS))

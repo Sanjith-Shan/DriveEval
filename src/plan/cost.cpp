@@ -1,4 +1,4 @@
-#include "switchback/plan/cost.hpp"
+#include "driveeval/plan/cost.hpp"
 
 #include <algorithm>
 #include <array>
@@ -6,7 +6,7 @@
 #include <cmath>
 #include <limits>
 
-namespace sb::plan {
+namespace drive::plan {
 namespace {
 
 constexpr std::array<const char*, kNumCostTerms> kTermNames{
@@ -246,4 +246,4 @@ CostResult evaluateCandidate(const Candidate& cand, const ReferencePath& path,
   return r;
 }
 
-}  // namespace sb::plan
+}  // namespace drive::plan

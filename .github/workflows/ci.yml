@@ -79,7 +79,7 @@ jobs:
         run: |
           cmake -S . -B build -G Ninja -DSB_BUILD_TESTS=OFF -DSB_ENABLE_OSQP=OFF \
             -DSB_NATIVE=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-          cmake --build build --target sb_cacheinfo
+          cmake --build build --target drive_cacheinfo
           python -m pytest tests/test_cache_abi.py -q
         env:
           PYTHONPATH: python

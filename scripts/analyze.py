@@ -21,10 +21,10 @@ sys.path.insert(0, str(REPO / "python"))
 
 import pandas as pd  # noqa: E402
 
-from switchback.db import load as dbload  # noqa: E402
-from switchback.db import queries as Q  # noqa: E402
-from switchback.mine import gate as gatemod  # noqa: E402
-from switchback.mine import subgroups  # noqa: E402
+from driveeval.db import load as dbload  # noqa: E402
+from driveeval.db import queries as Q  # noqa: E402
+from driveeval.mine import gate as gatemod  # noqa: E402
+from driveeval.mine import subgroups  # noqa: E402
 
 SEED = 20260917
 
@@ -42,7 +42,7 @@ def section(out: list[str], title: str) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="data/results")
-    ap.add_argument("--db", default="data/results/switchback.duckdb")
+    ap.add_argument("--db", default="data/results/driveeval.duckdb")
     ap.add_argument("--out", default="docs/FINDINGS.md")
     ap.add_argument("--dataset", default="av2_val")
     ap.add_argument("--n-boot", type=int, default=10000)
@@ -54,7 +54,7 @@ def main() -> int:
         db_path.unlink()
     con = dbload.open_db(db_path)
 
-    # sb_batch writes one metrics CSV per run and one features CSV per dataset,
+    # drive_batch writes one metrics CSV per run and one features CSV per dataset,
     # so the files are loaded by glob rather than by the fixed names
     # load_run_dir expects. Runs first: the loader's orphan check needs the run
     # row to exist before its metrics arrive.
@@ -414,7 +414,7 @@ def main() -> int:
         out.append("")
         out.append(
             "Heap allocations inside the planning cycle are not counted in a batch run: "
-            "the counting `operator new` is linked only into `sb_bench` and the test "
+            "the counting `operator new` is linked only into `drive_bench` and the test "
             "binary, so a zero here would mean 'not measured' rather than 'measured and "
             "zero'. The measured figure is in the benchmark section and is asserted by "
             "`tests/test_no_alloc.cpp`, which also verifies that the counter itself works."

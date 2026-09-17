@@ -12,7 +12,7 @@ statement about evaluation methodology that someone else can check.
 
 ## Thresholds
 
-`MetricThresholds` in `include/switchback/eval/metrics.hpp`. The comfort bounds
+`MetricThresholds` in `include/driveeval/eval/metrics.hpp`. The comfort bounds
 are nuPlan's `ego_is_comfortable` limits:
 
 | Quantity | Bound | Source |
@@ -117,7 +117,7 @@ baseline are unaffected and are reported.
 
 Every rate in this project is reported next to the same metric computed on the
 **logged human's own trajectory**, run through the identical suite
-(`sb_batch --logged-ego`). This is the floor. It is how the project can say that
+(`drive_batch --logged-ego`). This is the floor. It is how the project can say that
 its 15% drivable-area violation rate is real planner behaviour, because the
 human scores 0.000 on the same polygons, and that roughly a point of its
 collision rate is the footprint constants, because the human scores 1.0% on a

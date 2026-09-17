@@ -6,21 +6,21 @@ convention.
 
 ## 1. Scenario cache (binary)
 
-`include/switchback/io/cache_format.hpp` is the source of truth.
-`python/switchback/cache.py` mirrors it. `tests/test_cache_abi.py` compares the
-Python struct sizes against the sizes the C++ binary `sb_cacheinfo --abi`
+`include/driveeval/io/cache_format.hpp` is the source of truth.
+`python/driveeval/cache.py` mirrors it. `tests/test_cache_abi.py` compares the
+Python struct sizes against the sizes the C++ binary `drive_cacheinfo --abi`
 prints, so a drift on either side fails CI.
 
 ## 2. Results store (SQL)
 
-`python/switchback/db/schema.sql`. The batch runner emits CSV that
-`python/switchback/db/load.py` loads. `features` is the situation and is
+`python/driveeval/db/schema.sql`. The batch runner emits CSV that
+`python/driveeval/db/load.py` loads. `features` is the situation and is
 planner-independent; `metrics` is the outcome. Nothing derived from an outcome
 may enter `features`, or the miner finds tautologies.
 
 ## 3. Trajectory dump (JSON)
 
-`sb_plan --dump <file.json>` writes one scenario's closed-loop rollout. The
+`drive_plan --dump <file.json>` writes one scenario's closed-loop rollout. The
 visualiser and the HTML report read only this. Units are SI, angles radians,
 coordinates metres in cache-local frame (add `origin` for dataset frame).
 

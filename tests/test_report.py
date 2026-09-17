@@ -1,4 +1,4 @@
-"""Tests for switchback.report.
+"""Tests for driveeval.report.
 
 The report is the artefact a reviewer reads, so these tests assert the
 properties that make it trustworthy rather than the properties that make it
@@ -28,12 +28,12 @@ if str(_PY) not in sys.path:
 
 matplotlib.use("Agg")
 
-from switchback.cache import (  # noqa: E402
+from driveeval.cache import (  # noqa: E402
     CAP_DRIVABLE_AREA,
     CAP_LANE_CONNECTIVITY,
     CAP_SPEED_LIMITS,
 )
-from switchback.report.build import (  # noqa: E402
+from driveeval.report.build import (  # noqa: E402
     LIMITATIONS_FALLBACK,
     NOT_MEASURABLE,
     NOT_MEASURED,
@@ -41,7 +41,7 @@ from switchback.report.build import (  # noqa: E402
     wilson,
 )
 
-SCHEMA = _PY / "switchback" / "db" / "schema.sql"
+SCHEMA = _PY / "driveeval" / "db" / "schema.sql"
 LIMITS_HEADING = "What this is and what it is not"
 HARDWARE = "Apple M2 Pro, 10 core, 32 GB, macOS 15.3, clang 17, -O3 -march=native"
 

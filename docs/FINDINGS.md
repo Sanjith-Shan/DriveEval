@@ -144,7 +144,7 @@ A gate whose cells are mostly inconclusive is a gate that is telling the truth a
 
 Over 7,968 scenarios and 868,512 planning cycles, the median scenario's p50 cycle time is **0.98 ms** and its p99 is **3.51 ms**. Cycle-weighted mean 1.53 ms, worst single cycle 52.9 ms. The 10 Hz budget is 100 ms.
 
-Heap allocations inside the planning cycle are not counted in a batch run: the counting `operator new` is linked only into `sb_bench` and the test binary, so a zero here would mean 'not measured' rather than 'measured and zero'. The measured figure is in the benchmark section and is asserted by `tests/test_no_alloc.cpp`, which also verifies that the counter itself works.
+Heap allocations inside the planning cycle are not counted in a batch run: the counting `operator new` is linked only into `drive_bench` and the test binary, so a zero here would mean 'not measured' rather than 'measured and zero'. The measured figure is in the benchmark section and is asserted by `tests/test_no_alloc.cpp`, which also verifies that the counter itself works.
 
 The pooled per-cycle p99 is NOT recoverable from per-scenario summaries: a percentile of percentiles is not a percentile. What is reported here is the distribution of per-scenario p99s, labelled as such. The median of the per-scenario p50s is the honest headline; the tail figures are OS scheduling noise as much as planner behaviour. Hardware: Apple M3 Pro (12 core), -O3 -mcpu=native, process not pinned.
 

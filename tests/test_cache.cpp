@@ -5,9 +5,9 @@
 #include <random>
 
 #include "fixture.hpp"
-#include "switchback/io/cache_reader.hpp"
+#include "driveeval/io/cache_reader.hpp"
 
-using namespace sb;
+using namespace drive;
 
 TEST(Cache, RoundTripsAScenario) {
   const auto buf = test::ScenarioBuilder::straightRoad("abc-123", 25).shard();

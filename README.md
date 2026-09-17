@@ -1,43 +1,91 @@
-# Switchback
+# DriveEval
 
-**An urban motion planner in C++20, and the harness that finds where it fails.**
+**A self-driving motion planner, and the tool that finds out where it fails.**
 
-19,763 real scenarios from the Argoverse 2 Motion Forecasting validation split, planned
-and driven closed-loop under two agent models, mined for failure *classes* rather than a
-failure list. 212 tests. No perception, no learning, no GPU.
+---
+
+## What this actually is
+
+Self-driving cars are hard to evaluate. You can run one through a thousand recorded
+situations and count the crashes, but a crash count tells you almost nothing useful. It
+does not tell you *what kind* of situation the car struggles with, and it does not tell you
+whether the number you measured is real or just an artifact of how you ran the test.
+
+DriveEval is two programs that answer those two questions.
+
+**The first is a driver.** Given a real recorded traffic scene — a map, and every car,
+cyclist and pedestrian in it — it decides what the car should do. It picks a route through
+the road network, generates a few hundred possible paths, scores each one on how safe,
+smooth and useful it is, and smooths the winner into something a real car could physically
+drive. It does this in under a millisecond, ten times a second, in C++.
+
+**The second is the part that matters.** It runs that driver through 19,763 real scenes,
+records everything that happened in each one, and then asks the data a question most
+evaluation tools never ask: *what do the failures have in common?*
+
+The answer is not a list of the 200 worst scenes. It is a small number of **situation
+types**, like "turning left across traffic when someone is already close." In this project
+three such types account for **69% of all at-fault collisions**. That is something you can
+act on. A list of 200 scenes is not.
+
+**Why it is built this way.** The driver is intentionally simple and is not competitive
+with a real self-driving system. It is not supposed to be. It exists to be something with
+known flaws that you can point the measurement tool at. The measurement tool is the
+contribution.
 
 ![A planned scenario](docs/figures/scenario.png)
 
----
-
-## The three layers
-
-| | What it is | The part that matters |
-| --- | --- | --- |
-| **1. Planner**<br>C++20 | A\* over the dataset's own lane graph, then a Frenet lattice (5 lateral offsets × 6 terminal speeds × 2 terminal times, 13 named cost terms), then a trajectory optimiser | **Two optimisers on identical problems.** A hand-written iLQR and an OSQP SQP, both scored on the same true rollout, so the comparison is between formulations and not between bookkeeping |
-| **2. Harness** | Every scenario replayed under two agent models. *Log-replay*: agents follow recorded tracks and ignore the ego. *Reactive*: IDM longitudinally against whatever is ahead, pure pursuit laterally along their own recorded path | **Every rate sits next to the same metric computed on the logged human's own trajectory.** That floor is how the project separates a planner defect from a dataset artefact |
-| **3. Miner** | Beam-search subgroup discovery over conjunctions of *situation* features, not a sorted list of the worst scenarios | **A frozen discovery/confirmation split** assigned from a hash of the scenario id, **Benjamini-Hochberg** across every candidate tested with the candidate count printed, and a **cluster bootstrap over scenarios**, because 109 steps of one scenario are not 109 independent draws |
-
-Route costs are in seconds, so weights read as "this manoeuvre is worth N seconds of
-detour". The A\* heuristic is admissible and `tests/test_route.cpp` checks it against an
-independent Dijkstra over the same edge model. Metric definitions are borrowed from nuPlan
-and cited, with every adaptation written down in `docs/METRICS.md`.
+*One scene. Grey boxes are other vehicles, the faint blue fan is the few hundred paths
+considered, the solid blue line is what the car actually drove, and the dashed black line
+is what the real human driver did in the recording.*
 
 ---
 
-## Findings
+## The three findings
 
-Full set with confidence intervals in [`docs/FINDINGS.md`](docs/FINDINGS.md), regenerated
-from the database by `scripts/analyze.py`. Results that did not reproduce are published
-there as nulls. Three that matter:
+Everything below is measured, not estimated. The full set, with confidence intervals and
+the results that failed to reproduce, is in [`docs/FINDINGS.md`](docs/FINDINGS.md).
 
-| Finding | Measured | Mechanism |
-| --- | --- | --- |
-| **Log-replay does not flatter this planner. It maligns it.** | Total collision rate **1.65x higher** under log-replay, 95% CI [1.49, 1.85]. At-fault rate is statistically unchanged at 1.05x [0.93, 1.20] — the interval contains 1, so that half is a **null** and is reported as one | Log-replay agents ignore the ego and drive into it. Not-at-fault collisions run **4.02%** under log-replay against **0.38%** under reactive agents |
-| **Ranking by human-likeness inverts the safety ranking.** | Kendall tau between the ADE ordering and the safety-suite ordering is **-1.000** across four configurations (p = 0.083, so the test is weak and that is printed) | The best-ADE configuration is pure pursuit, which has no obstacle reasoning and collides in **52%** of its scenarios. It scores well precisely because it never reacts — the logged human never had to avoid anything either |
-| **The long tail is concentrated.** | Top three classes cover **68.9%** of all at-fault failures on the confirmation split. Strongest single class runs **3.9x** lift [2.57, 6.69], q = 9.4e-11 among **5,738** candidate conjunctions | Mined on the frozen discovery half, reported only on the confirmation half, BH-corrected across every candidate tested |
+### 1. How you run the test changes the answer
 
-Paired and bootstrapped over scenarios, 7,968 scenarios per agent model.
+There are two ways to replay a recorded scene. In the easy way, the other cars just repeat
+what they did in the recording and ignore your car completely. In the hard way, they
+actually react to it.
+
+Everyone expects the easy way to make a planner look better than it is. **It does the
+opposite.** Total collisions are **1.65x higher** when the other cars ignore you, because
+they drive straight into you through no fault of your own. Collisions that were genuinely
+the planner's fault do not change at all.
+
+That distinction — 4.02% of collisions are someone driving into you, versus 0.38% when they
+can see you — is invisible unless you measure both ways and separate fault from blame. Most
+benchmarks do neither.
+
+### 2. Measuring "does it drive like a human" gives you the wrong answer
+
+A common way to score a self-driving planner is to check how closely it matches what the
+human driver actually did. DriveEval ranked four planners that way, then ranked them again
+on safety. **The two rankings came out exactly backwards.**
+
+The reason is simple once you see it. The planner that best matched the human is one that
+blindly follows the road and never reacts to anything. It matched well because the human in
+the recording never had to avoid anything either. It also **crashed in 52% of its scenes.**
+
+Matching a human is a similarity score, not a correctness score. This project reports it in
+its own section and never uses it alone to rank anything.
+
+### 3. Failures come in a few shapes, not a thousand
+
+Rather than ranking individual bad scenes, DriveEval searches for *combinations of
+conditions* that predict failure, then checks each candidate on a held-out half of the data
+it never searched. The top three cover **69%** of at-fault collisions. The strongest single
+one makes failure **3.9x** more likely than the baseline rate.
+
+The check matters as much as the finding. Search hard enough through 5,738 possible
+combinations and you will find something impressive by pure chance, so every result is
+corrected for the number of things tested and confirmed on data the search never saw.
+
+---
 
 ## Measured
 
@@ -45,27 +93,48 @@ Paired and bootstrapped over scenarios, 7,968 scenarios per agent model.
 
 | | |
 | --- | --- |
-| Scenarios converted / simulated per configuration | **19,763** of the 24,988 AV2 val split / **8,000** |
-| Planning cycle, idle machine | **p50 823 µs**, p90 2.2 ms, p99 4.1 ms, against a 100 ms budget |
-| Heap allocations inside the planning cycle | **0** over 16,350 cycles, asserted by a test that also verifies its own counter |
-| iLQR against OSQP, identical problems | **6.9x** faster at the median · 55.6% of the objective removed against 30.3% · converged 86.2% against 59.3% |
-| Bounding the off-road field to the route corridor | **6.3x** whole-cycle speedup, because a 1.6 MB field fits in L2 where a 10 MB one does not |
-| Human floor, same metric suite | 0.90% collision, 0.06% off-road, against the planner's 5.20% and 11.37% |
-| Tests | **212** — 47 C++ under ctest, 165 Python under pytest |
+| Real scenes converted / driven per configuration | **19,763** of the 24,988 Argoverse 2 validation split / **8,000** |
+| Time to plan one cycle, idle machine | **p50 823 µs**, p90 2.2 ms, p99 4.1 ms, against a 100 ms budget |
+| Memory allocated while planning | **0 bytes** over 16,350 cycles, checked by a test that also verifies its own counter |
+| The two path optimizers, on identical problems | iLQR is **6.9x** faster than OSQP, removes 55.6% of the cost against 30.3%, and succeeds 86.2% of the time against 59.3% |
+| Restricting the off-road map to the route corridor | **6.3x** faster overall, because a 1.6 MB map fits in cache and a 10 MB one does not |
+| The human driver, scored by the same rules | 0.90% collision, 0.06% off-road — against this planner's 5.20% and 11.37% |
+| Tests | **212** — 47 C++, 165 Python |
+
+That last row is the one to read first. Every rate this project reports sits next to the
+same rate computed on the real human's driving through the identical scoring code. Without
+that floor there is no way to tell a flaw in the planner from a flaw in the dataset.
+
+---
+
+## How it works
+
+| | What it does | The detail that matters |
+| --- | --- | --- |
+| **The driver**<br>C++ | Searches the road network for a route (A\*), generates 60 candidate paths around it, scores each on 13 separate criteria, then mathematically smooths the best one | **Two different smoothing algorithms, benchmarked against each other** on identical problems and scored by the same simulation, so the comparison is between the methods and not between how each one reports itself |
+| **The test harness** | Replays every scene twice, once with the other cars ignoring you and once with them reacting, and writes one row per scene into a database | **Every score sits next to the human driver's score** through the same code. Scoring rules are taken from nuPlan, an established benchmark, and cited, with every change written down |
+| **The failure finder** | Searches for combinations of conditions that predict failure, instead of ranking individual bad scenes | **Searches one half of the data and reports only on the other half**, corrects for how many combinations were tested, and treats each scene as one data point rather than each of its 109 time steps |
+
+Two tools explain a specific failure. `drive_ablate` re-runs one scene changing a single
+thing at a time to find what caused it. `drive_sweep` nudges one interaction to find out
+how close the scene was to going the other way. A regression gate refuses to call a change
+a regression when the before and after intervals overlap.
+
+---
 
 ## Scope
 
-Read before quoting any number above. [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) is the
-full list, including **six defects in this harness that were found by running it**, each
-quantified.
+Read this before quoting any number above. [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) is
+the full list, including **six flaws in this tool that were found by running it**, each one
+measured.
 
 | | |
 | --- | --- |
-| **Perception** | None. The planner consumes ground-truth agent boxes from the dataset. Every safety number here is an upper bound on what a real stack would achieve |
-| **The planner** | Deliberately classical, not competitive with a production planner, and not trying to be. It exists to be a well-instrumented subject. The instrument is the contribution |
-| **Collision rates** | A property of this benchmark on 11-second curated scenarios. Not a safety claim about a vehicle |
-| **ADE** | A similarity metric, reported in its own block, never used alone to rank a configuration. A planner that deviates from the logged human may be better — see finding 2 |
-| **Data** | Argoverse 2, CC BY-NC-SA 4.0. No shard is redistributed here |
+| **No perception** | The planner is handed the exact position of every object. A real car has to detect them first and gets that wrong sometimes. Every safety number here is a best case |
+| **Not a real planner** | Deliberately simple, not competitive with a production self-driving system, not trying to be. It is the thing being measured, not the achievement |
+| **Not road miles** | These are 11-second recorded clips. A collision rate here describes this benchmark. It is not a safety claim about a vehicle |
+| **Human matching is not correctness** | Reported separately and never used alone to rank anything. See finding 2 |
+| **Data license** | Argoverse 2, CC BY-NC-SA 4.0. No data is redistributed in this repository |
 
 ---
 
@@ -77,7 +146,7 @@ cmake --build build
 ctest --test-dir build
 ```
 
-Eigen, OSQP and GoogleTest are fetched by CMake.
+Eigen, OSQP and GoogleTest are downloaded automatically by CMake.
 
 ```sh
 python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt
@@ -91,45 +160,35 @@ python scripts/fetch_av2.py --split val --out data/raw/av2 --jobs 48   # 6.3 GB
 python scripts/convert_av2.py --raw data/raw/av2/val --out data/cache/av2_val
 ./scripts/run_all.sh                       # the full measurement campaign
 python scripts/analyze.py --reload         # regenerates docs/FINDINGS.md
-python scripts/build_report.py             # the self-contained HTML report
+python scripts/build_report.py             # the standalone HTML report
 ```
 
-One scenario, and the picture at the top of this page:
+Drive one scene, and draw the picture at the top of this page:
 
 ```sh
-./build/sb_plan --shard data/cache/av2_val/av2_val_0000.sbsc --scenario 0 \
+./build/drive_plan --shard data/cache/av2_val/av2_val_0000.scn --scenario 0 \
     --mode reactive --backend ilqr --dump /tmp/s.json
 python scripts/render_scenario.py /tmp/s.json --out /tmp/s.png
-./build/sb_ablate --shard data/cache/av2_val/av2_val_0000.sbsc --scenario 0
+./build/drive_ablate --shard data/cache/av2_val/av2_val_0000.scn --scenario 0
 ```
 
 ## Layout
 
 | Path | What |
 | --- | --- |
-| `include/switchback/`, `src/` | the C++ core |
-| `apps/` | `sb_plan`, `sb_batch`, `sb_bench`, `sb_route`, `sb_ablate`, `sb_sweep`, `sb_cacheinfo` |
-| `python/switchback/` | ingest, results store, statistics, miner, gate, visualiser, report |
+| `include/driveeval/`, `src/` | the C++ core |
+| `apps/` | `drive_plan`, `drive_batch`, `drive_bench`, `drive_route`, `drive_ablate`, `drive_sweep`, `drive_cacheinfo` |
+| `python/driveeval/` | data loading, results database, statistics, failure finder, gate, drawing, report |
 | `docs/LIMITATIONS.md` | **read first** |
 | `docs/FINDINGS.md` | the measured results |
-| `docs/METRICS.md` | every metric, its source, and the adaptation |
-| `docs/STATISTICS.md` | resampling unit, the split, the correction, the gate |
-| `docs/CONTRACTS.md` | the three interfaces between the layers |
-
-Two attribution tools sit alongside the batch runner: `sb_ablate` re-runs a failure with
-one thing changed at a time to find what caused it, and `sb_sweep` perturbs one
-interaction to find how close the scenario was to going the other way. A regression gate
-refuses to call an overlapping-interval change a regression.
+| `docs/METRICS.md` | every score, where its definition came from, and what was changed |
+| `docs/STATISTICS.md` | how significance is handled and why |
+| `docs/CONTRACTS.md` | the interfaces between the three parts |
 
 ## Lineage
 
-The statistical discipline is ported, not reinvented. The cluster bootstrap over scenarios
-comes from **Proving Ground**, which resamples tasks for the same reason. The regression
-gate's refusal to call an overlapping interval a regression comes from **Dyno**.
-`docs/STATISTICS.md` records where each one differs from its source, including the two
-places the port could not be literal.
-
----
-
-*A switchback is the hairpin a road takes to climb a grade. It is also what a search does
-when it backtracks.*
+The statistical discipline is borrowed from two earlier projects rather than reinvented.
+Treating each scene as one data point instead of each time step comes from **Proving
+Ground**, which does the same with tasks. Refusing to call an overlapping interval a
+regression comes from **Dyno**. `docs/STATISTICS.md` records where each borrowing differs
+from its source, including the two places it could not be copied directly.

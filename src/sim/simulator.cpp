@@ -1,12 +1,12 @@
-#include "switchback/sim/simulator.hpp"
+#include "driveeval/sim/simulator.hpp"
 
 #include <algorithm>
 #include <cmath>
 
-#include "switchback/core/alloc_count.hpp"
-#include "switchback/sim/tracker.hpp"
+#include "driveeval/core/alloc_count.hpp"
+#include "driveeval/sim/tracker.hpp"
 
-namespace sb::sim {
+namespace drive::sim {
 
 Control extractControl(const Trajectory& traj, Scalar dt, const VehicleParams& veh) {
   Control c;
@@ -202,7 +202,7 @@ const SimOutput& Simulator::run(const io::ScenarioView& view, io::u32 capabiliti
                       cfg_.planner.veh.max_accel);
       rec.plan_us = 0.0;
     } else {
-      sb::AllocScope scope;
+      drive::AllocScope scope;
       const plan::PlanOutput& po = planner_.plan(ego, ego_accel, step);
       if (cfg_.count_allocs) plan_allocs += scope.delta();
       rec.plan_us = po.plan_us;
@@ -323,4 +323,4 @@ const SimOutput& Simulator::run(const io::ScenarioView& view, io::u32 capabiliti
   return out_;
 }
 
-}  // namespace sb::sim
+}  // namespace drive::sim

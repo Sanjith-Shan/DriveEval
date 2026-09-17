@@ -3,11 +3,11 @@
 #include <algorithm>
 
 #include "fixture.hpp"
-#include "switchback/eval/metrics.hpp"
-#include "switchback/io/cache_reader.hpp"
+#include "driveeval/eval/metrics.hpp"
+#include "driveeval/io/cache_reader.hpp"
 
-using namespace sb;
-using namespace sb::eval;
+using namespace drive;
+using namespace drive::eval;
 
 TEST(Metrics, TimeToCollisionFindsAHeadOnClosure) {
   // Ego at the origin doing 10 m/s east, a vehicle 30 m east doing 10 m/s west.

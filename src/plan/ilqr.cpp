@@ -2,9 +2,9 @@
 #include <chrono>
 #include <cmath>
 
-#include "switchback/plan/refine.hpp"
+#include "driveeval/plan/refine.hpp"
 
-namespace sb::plan {
+namespace drive::plan {
 namespace {
 
 // Quadratic expansion of the stage cost at one knot. l_ux is identically zero
@@ -345,4 +345,4 @@ void IlqrRefiner::solve(const RefineProblem& prob, RefineResult& out, const Ilqr
       std::chrono::duration<double, std::micro>(std::chrono::steady_clock::now() - t_start).count();
 }
 
-}  // namespace sb::plan
+}  // namespace drive::plan

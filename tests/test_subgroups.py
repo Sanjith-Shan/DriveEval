@@ -27,10 +27,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python"))
 
-from switchback.db import load as dbload  # noqa: E402
-from switchback.db import queries  # noqa: E402
-from switchback.mine import discretize, subgroups  # noqa: E402
-from switchback.mine.discretize import Predicate  # noqa: E402
+from driveeval.db import load as dbload  # noqa: E402
+from driveeval.db import queries  # noqa: E402
+from driveeval.mine import discretize, subgroups  # noqa: E402
+from driveeval.mine.discretize import Predicate  # noqa: E402
 
 PLANTED_RULE = "ego_maneuver = left AND n_oncoming_within_40m >= 2"
 
@@ -670,7 +670,7 @@ def test_per_maneuver_failure_rates_computes_wilson_in_sql(tmp_path):
     assert (df["rate"] <= df["rate_hi"]).all()
     assert (df["rate_lo"] >= 0).all() and (df["rate_hi"] <= 1).all()
     # Cross-check one row against the Python Wilson implementation.
-    from switchback.mine.stats import wilson_interval
+    from driveeval.mine.stats import wilson_interval
 
     r = df.iloc[0]
     ci = wilson_interval(int(r["k"]), int(r["n"]))

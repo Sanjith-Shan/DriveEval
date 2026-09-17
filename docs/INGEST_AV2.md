@@ -1,6 +1,6 @@
 # Ingesting Argoverse 2 motion forecasting
 
-How `data/raw/av2/val` becomes `data/cache/av2_val/*.sbsc`, and — more
+How `data/raw/av2/val` becomes `data/cache/av2_val/*.scn`, and — more
 importantly — which numbers in those shards are measurements and which are
 constants this layer invented because the dataset does not contain them.
 
@@ -9,7 +9,7 @@ scripts/fetch_av2.py   --split val --out data/raw/av2 --jobs 48
 scripts/convert_av2.py --raw data/raw/av2/val --out data/cache/av2_val --jobs 10
 ```
 
-Code: `python/switchback/av2/{download,convert,speed_prior}.py`.
+Code: `python/driveeval/av2/{download,convert,speed_prior}.py`.
 Tests: `tests/test_av2_convert.py`, offline against the one scenario checked
 in at `tests/data/av2_sample/`.
 
@@ -90,7 +90,7 @@ The constants actually used are recorded in every run's `manifest.json` under
 ## Speed prior is empirical, not a posted limit
 
 AV2 has no posted limits, so `LaneRec.speed_prior` is derived from the traffic
-in the log (`python/switchback/av2/speed_prior.py`):
+in the log (`python/driveeval/av2/speed_prior.py`):
 
 1. Take every valid state of every `vehicle` or `bus` agent.
 2. Match each state to the nearest lane centerline within **3.0 m** lateral,
@@ -168,7 +168,7 @@ else.
 - **`AgentMeta.category`** carries AV2's `object_category` unchanged
   (0 TRACK_FRAGMENT, 1 UNSCORED, 2 SCORED, 3 FOCAL) for provenance. Note that
   the AV is not necessarily the focal agent; AV2's focal track is a different
-  agent, and Switchback plans for the AV.
+  agent, and DriveEval plans for the AV.
 - **City** enum: austin 0, miami 1, pittsburgh 2, dearborn 3, washington-dc 4,
   palo-alto 5, unknown 6. No val scenario hit unknown.
 - **Lanes.** `VEHICLE`, `BIKE` and `BUS` are all kept and tagged in
@@ -247,7 +247,7 @@ in **271 s** at 48 jobs (~92 scenarios/s), 0 failures.
 ```
 data/raw/av2/val/<scenario_id>/scenario_<id>.parquet
                               /log_map_archive_<id>.json
-data/cache/av2_val/av2_val_%04d.sbsc      500 scenarios per shard
+data/cache/av2_val/av2_val_%04d.scn      500 scenarios per shard
 data/cache/av2_val/manifest.json
 data/cache/av2_val/rejections.json
 ```

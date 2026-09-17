@@ -1,8 +1,8 @@
 #include <cmath>
 
-#include "switchback/plan/refine.hpp"
+#include "driveeval/plan/refine.hpp"
 
-namespace sb::plan {
+namespace drive::plan {
 
 const char* toString(Backend b) {
   switch (b) {
@@ -93,4 +93,4 @@ Scalar refineObjective(const RefineProblem& prob, const Trajectory& traj) {
   return total;
 }
 
-}  // namespace sb::plan
+}  // namespace drive::plan

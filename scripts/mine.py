@@ -18,8 +18,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python"))
 
-from switchback.db import load as dbload  # noqa: E402
-from switchback.mine import subgroups  # noqa: E402
+from driveeval.db import load as dbload  # noqa: E402
+from driveeval.mine import subgroups  # noqa: E402
 
 
 def build_parser() -> argparse.ArgumentParser:

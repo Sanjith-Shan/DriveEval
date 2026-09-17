@@ -1,4 +1,4 @@
-#include "switchback/io/cache_reader.hpp"
+#include "driveeval/io/cache_reader.hpp"
 
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -8,7 +8,7 @@
 #include <cstring>
 #include <limits>
 
-namespace sb::io {
+namespace drive::io {
 namespace {
 
 // Caps that bound the arithmetic below. A shard claiming a billion agents is
@@ -94,7 +94,7 @@ Result<ShardReader> ShardReader::build(std::span<const unsigned char> bytes, voi
   if (bytes.size() < sizeof(FileHeader)) return fail("file shorter than the header");
   FileHeader fh{};
   std::memcpy(&fh, bytes.data(), sizeof(fh));
-  if (std::memcmp(fh.magic, kMagic, 4) != 0) return fail("bad magic, not a Switchback cache");
+  if (std::memcmp(fh.magic, kMagic, 4) != 0) return fail("bad magic, not a DriveEval cache");
   if (fh.version != kVersion) {
     return fail("cache version " + std::to_string(fh.version) + ", this build reads " +
                 std::to_string(kVersion));
@@ -250,4 +250,4 @@ Result<ScenarioView> ShardReader::scenario(std::size_t i) const {
   return Result<ScenarioView>::success(v);
 }
 
-}  // namespace sb::io
+}  // namespace drive::io

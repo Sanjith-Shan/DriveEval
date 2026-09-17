@@ -18,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python"))
 
-from switchback.av2.download import S3Object, download_split, list_scenario_objects
+from driveeval.av2.download import S3Object, download_split, list_scenario_objects
 
 
 def _log(msg: str) -> None:

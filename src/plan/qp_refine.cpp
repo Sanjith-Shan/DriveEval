@@ -18,16 +18,16 @@
 #include <map>
 #include <memory>
 
-#include "switchback/plan/refine.hpp"
+#include "driveeval/plan/refine.hpp"
 
-#if SB_WITH_OSQP
+#if DE_WITH_OSQP
 #include <osqp.h>
 #endif
 
-namespace sb::plan {
+namespace drive::plan {
 namespace {
 
-#if SB_WITH_OSQP
+#if DE_WITH_OSQP
 
 constexpr int kStateDim = 4;
 constexpr int kCtrlDim = 2;
@@ -90,11 +90,11 @@ struct Csc {
   }
 };
 
-#endif  // SB_WITH_OSQP
+#endif  // DE_WITH_OSQP
 
 }  // namespace
 
-#if !SB_WITH_OSQP
+#if !DE_WITH_OSQP
 
 void QpRefiner::reserve(std::size_t) {}
 bool QpRefiner::available() { return false; }
@@ -529,6 +529,6 @@ void QpRefiner::solve(const RefineProblem& prob, RefineResult& out, const QpOpti
       std::chrono::duration<double, std::micro>(std::chrono::steady_clock::now() - t_start).count();
 }
 
-#endif  // SB_WITH_OSQP
+#endif  // DE_WITH_OSQP
 
-}  // namespace sb::plan
+}  // namespace drive::plan

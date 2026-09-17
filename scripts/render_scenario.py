@@ -24,7 +24,7 @@ import matplotlib
 # Headless by default: this script runs in CI far more often than on a desktop.
 matplotlib.use("Agg")
 
-from switchback.viz import (  # noqa: E402  (must follow the backend choice)
+from driveeval.viz import (  # noqa: E402  (must follow the backend choice)
     DEFAULT_SHOW,
     ELEMENTS,
     animate_rollout,
@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("dump", nargs="+", type=Path,
-                    help="trajectory dump(s) from sb_plan --dump. More than one, "
+                    help="trajectory dump(s) from drive_plan --dump. More than one, "
                          "with --grid, renders a failure grid instead.")
     ap.add_argument("--png", type=Path, help="write a static render here")
     ap.add_argument("--gif", type=Path, help="write a rollout animation here")
@@ -79,7 +79,7 @@ def main(argv: list[str] | None = None) -> int:
         ax = render_scenario(traj, t=args.time, show=DEFAULT_SHOW - set(args.hide))
         args.png.parent.mkdir(parents=True, exist_ok=True)
         ax.figure.savefig(args.png, dpi=args.dpi, bbox_inches="tight", facecolor="white")
-        stats = ax.switchback_stats
+        stats = ax.driveeval_stats
         print(f"wrote {args.png} ({args.png.stat().st_size / 1e6:.2f} MB) "
               f"at t = {stats.t:.1f} s: {stats.n_agents_drawn} agents drawn, "
               f"{stats.n_agents_skipped_invalid} skipped as invalid, "

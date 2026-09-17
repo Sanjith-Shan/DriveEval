@@ -3,7 +3,7 @@
 
     scripts/convert_av2.py --raw data/raw/av2/val --out data/cache/av2_val --jobs 10
 
-Writes av2_val_%04d.sbsc shards, a manifest.json, and rejections.json listing
+Writes av2_val_%04d.scn shards, a manifest.json, and rejections.json listing
 every scenario that was dropped and why. A scenario is never dropped
 silently: kept + rejected always equals the number of raw directories seen.
 """
@@ -21,7 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python"))
 
-from switchback.av2.convert import (
+from driveeval.av2.convert import (
     AGENT_TYPE_NAMES,
     CAPABILITIES,
     DT_SECONDS,
@@ -32,7 +32,7 @@ from switchback.av2.convert import (
     ConvertStats,
     convert_dir,
 )
-from switchback.av2.speed_prior import (
+from driveeval.av2.speed_prior import (
     FALLBACK_INTERSECTION_MPS,
     FALLBACK_ROAD_MPS,
     MAX_HEADING_DIFF_RAD,
@@ -41,7 +41,7 @@ from switchback.av2.speed_prior import (
     PERCENTILE,
     SPEED_CLAMP_MPS,
 )
-from switchback.cache import SOURCE_AV2, write_shard
+from driveeval.cache import SOURCE_AV2, write_shard
 
 
 def _log(msg: str) -> None:
@@ -97,7 +97,7 @@ def main(argv: list[str] | None = None) -> int:
         nonlocal kept_buf
         if not kept_buf:
             return
-        path = args.out / f"{prefix}_{len(shards):04d}.sbsc"
+        path = args.out / f"{prefix}_{len(shards):04d}.scn"
         write_shard(path, kept_buf, source=SOURCE_AV2, capabilities=CAPABILITIES)
         shards.append(
             {

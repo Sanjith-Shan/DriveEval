@@ -23,7 +23,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python"))
 
-from switchback.mine import stats  # noqa: E402
+from driveeval.mine import stats  # noqa: E402
 
 
 def width(ci) -> float:

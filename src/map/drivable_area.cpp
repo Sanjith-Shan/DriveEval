@@ -1,11 +1,11 @@
-#include "switchback/map/drivable_area.hpp"
+#include "driveeval/map/drivable_area.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <vector>
 
-namespace sb::map {
+namespace drive::map {
 
 DrivableArea DrivableArea::build(const io::ScenarioView& view, Vec2 focus_min,
                                  Vec2 focus_max) {
@@ -256,4 +256,4 @@ Scalar DrivableArea::outsideDistance(const Box2& box) const {
   return worst;
 }
 
-}  // namespace sb::map
+}  // namespace drive::map

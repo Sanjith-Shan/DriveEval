@@ -11,12 +11,12 @@
 #include <cstdint>
 #include <span>
 
-#include "switchback/io/cache_reader.hpp"
-#include "switchback/map/drivable_area.hpp"
-#include "switchback/map/lane_graph.hpp"
+#include "driveeval/io/cache_reader.hpp"
+#include "driveeval/map/drivable_area.hpp"
+#include "driveeval/map/lane_graph.hpp"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  auto shard = sb::io::ShardReader::fromBuffer(std::span<const unsigned char>(data, size));
+  auto shard = drive::io::ShardReader::fromBuffer(std::span<const unsigned char>(data, size));
   if (!shard) return 0;
   for (std::size_t i = 0; i < shard->size() && i < 8; ++i) {
     auto sv = shard->scenario(i);

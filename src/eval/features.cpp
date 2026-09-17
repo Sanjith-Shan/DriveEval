@@ -1,10 +1,10 @@
-#include "switchback/eval/features.hpp"
+#include "driveeval/eval/features.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 
-namespace sb::eval {
+namespace drive::eval {
 namespace {
 
 const char* cityName(io::u32 c) {
@@ -275,4 +275,4 @@ std::string featuresCsvRow(const ScenarioFeatures& f) {
   return out;
 }
 
-}  // namespace sb::eval
+}  // namespace drive::eval

@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
 #include "fixture.hpp"
-#include "switchback/io/cache_reader.hpp"
-#include "switchback/map/route_search.hpp"
-#include "switchback/plan/lattice.hpp"
+#include "driveeval/io/cache_reader.hpp"
+#include "driveeval/map/route_search.hpp"
+#include "driveeval/plan/lattice.hpp"
 
-using namespace sb;
-using namespace sb::plan;
+using namespace drive;
+using namespace drive::plan;
 
 TEST(Polynomial, QuinticHitsEveryBoundaryCondition) {
   const Scalar T = 4.0;

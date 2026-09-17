@@ -15,23 +15,23 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from switchback import cache as C
+from driveeval import cache as C
 
 REPO = Path(__file__).resolve().parent.parent
 
 
 def _cacheinfo() -> Path | None:
-    for candidate in (REPO / "build" / "sb_cacheinfo", REPO / "build-fuzz" / "sb_cacheinfo"):
+    for candidate in (REPO / "build" / "drive_cacheinfo", REPO / "build-fuzz" / "drive_cacheinfo"):
         if candidate.exists():
             return candidate
-    found = shutil.which("sb_cacheinfo")
+    found = shutil.which("drive_cacheinfo")
     return Path(found) if found else None
 
 
 def test_struct_sizes_match_the_compiled_binary():
     binary = _cacheinfo()
     if binary is None:
-        pytest.skip("sb_cacheinfo not built; run cmake --build build first")
+        pytest.skip("drive_cacheinfo not built; run cmake --build build first")
     out = subprocess.run([str(binary), "--abi"], capture_output=True, text=True, check=True).stdout
 
     reported: dict[str, int] = {}
@@ -46,7 +46,7 @@ def test_struct_sizes_match_the_compiled_binary():
             reported[parts[0]] = int(parts[1])
 
     assert version == C.VERSION, f"C++ writes cache version {version}, Python expects {C.VERSION}"
-    assert reported, "sb_cacheinfo --abi printed nothing"
+    assert reported, "drive_cacheinfo --abi printed nothing"
     for name, size in C.STRUCT_SIZES.items():
         assert name in reported, f"C++ does not report a size for {name}"
         assert reported[name] == size, (
@@ -77,7 +77,7 @@ def test_round_trip_through_the_writer_and_reader(tmp_path):
         num_steps=n_steps, agents=agents, states=states, lanes=lanes, lane_points=pts,
         succ=np.zeros(0, "<u4"), pred=np.zeros(0, "<u4"), polygons=polys, polygon_points=ppts,
     )
-    path = tmp_path / "rt.sbsc"
+    path = tmp_path / "rt.scn"
     C.write_shard(path, [sc], source=C.SOURCE_SYNTHETIC,
                   capabilities=C.CAP_DRIVABLE_AREA | C.CAP_LANE_CONNECTIVITY)
 
@@ -105,7 +105,7 @@ def test_the_binary_reads_what_python_wrote(tmp_path):
     """End to end across the language boundary, which is the point of the format."""
     binary = _cacheinfo()
     if binary is None:
-        pytest.skip("sb_cacheinfo not built")
+        pytest.skip("drive_cacheinfo not built")
     n = 6
     agents = np.zeros(1, C.DT_AGENT_META)
     agents[0] = (C.id_hash("AV"), C.AGENT_VEHICLE, 3, 4.5, 2.0)
@@ -120,7 +120,7 @@ def test_the_binary_reads_what_python_wrote(tmp_path):
         lane_points=np.array([(0.0, 0.0), (10.0, 0.0)], C.DT_POINT_REC),
         succ=np.zeros(0, "<u4"), pred=np.zeros(0, "<u4"),
     )
-    path = tmp_path / "cross.sbsc"
+    path = tmp_path / "cross.scn"
     C.write_shard(path, [sc], source=C.SOURCE_SYNTHETIC, capabilities=C.CAP_LANE_CONNECTIVITY)
     out = subprocess.run([str(binary), "--shard", str(path), "--scenario", "0"],
                          capture_output=True, text=True, check=True).stdout

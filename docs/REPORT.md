@@ -3,8 +3,8 @@
 Two layers, both downstream of everything else and neither of them able to
 write to the database:
 
-- `python/switchback/viz` turns one trajectory dump into pictures.
-- `python/switchback/report` turns the results store into one HTML file.
+- `python/driveeval/viz` turns one trajectory dump into pictures.
+- `python/driveeval/report` turns the results store into one HTML file.
 
 Neither invents a number. Where an input is missing, the output says so in
 words; there is no code path in either layer that substitutes a zero for an
@@ -42,7 +42,7 @@ the project virtualenv.
 ./.venv/bin/python -m pytest tests/test_viz.py tests/test_report.py -q
 ```
 
-The trajectory dumps come from `sb_plan --dump <file.json>`; the format is
+The trajectory dumps come from `drive_plan --dump <file.json>`; the format is
 locked in `docs/CONTRACTS.md` section 3 and is the only thing `viz` reads.
 
 ### Where the failure grids look for dumps
@@ -65,7 +65,7 @@ agree on who writes those dumps.
 
 `render_scenario(traj_json, *, ax=None, t=None, show=...)` draws one scenario
 top-down and returns the axes, with a `RenderStats` record attached as
-`ax.switchback_stats` naming exactly what was drawn.
+`ax.driveeval_stats` naming exactly what was drawn.
 
 **What is in the frame, and why it looks the way it does.** The figure has one
 job: keep the ego's *planned* trajectory and the ego's *logged* trajectory
@@ -143,7 +143,7 @@ something larger, and `stride` and `dpi` are the two levers.
 
 ## The fixture
 
-`tests/data/traj_sample.json` is hand-authored, because `sb_plan` does not exist
+`tests/data/traj_sample.json` is hand-authored, because `drive_plan` does not exist
 yet. Its map, lane graph, crosswalks and agent tracks are the real Argoverse 2
 scenario `00010486-9a07-48ae-b493-cf4545855937` in Austin, cropped to the
 rollout and rounded to centimetres. The planner-side fields -- reference path,

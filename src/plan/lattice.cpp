@@ -1,9 +1,9 @@
-#include "switchback/plan/lattice.hpp"
+#include "driveeval/plan/lattice.hpp"
 
 #include <algorithm>
 #include <cmath>
 
-namespace sb::plan {
+namespace drive::plan {
 
 Quintic Quintic::fit(Scalar p0, Scalar v0, Scalar a0, Scalar p1, Scalar v1, Scalar a1, Scalar T) {
   Quintic q;
@@ -170,4 +170,4 @@ std::size_t Lattice::generate(const ReferencePath& path, const FrenetPoint& star
   return count_;
 }
 
-}  // namespace sb::plan
+}  // namespace drive::plan
