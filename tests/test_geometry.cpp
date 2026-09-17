@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <limits>
 #include <random>
 
 #include "driveeval/core/geometry.hpp"
@@ -141,4 +142,42 @@ TEST(Geometry, EgoFootprintSitsAheadOfTheRearAxle) {
   EXPECT_NEAR(b.center.x, 0.0, 1e-9);
   EXPECT_NEAR(b.center.y, veh.rear_axle_to_center, 1e-9);
   EXPECT_NEAR(b.length, veh.length, 1e-12);
+}
+
+// boundedSampleCount is the single guard standing between unchecked map
+// geometry and a reserve() call. The fuzzer found two ways past the version
+// that did not exist: an out-of-memory abort in resample() and an uncaught
+// std::length_error in ReferencePath::build(). These cases are the contract.
+TEST(Geometry, BoundedSampleCountRejectsUnusableGeometry) {
+  constexpr std::size_t cap = 1000;
+  const Scalar inf = std::numeric_limits<Scalar>::infinity();
+  const Scalar nan = std::numeric_limits<Scalar>::quiet_NaN();
+
+  EXPECT_EQ(boundedSampleCount(inf, 1.0, cap), 0u) << "infinite length";
+  EXPECT_EQ(boundedSampleCount(nan, 1.0, cap), 0u) << "NaN length";
+  EXPECT_EQ(boundedSampleCount(100.0, inf, cap), 0u) << "infinite step";
+  EXPECT_EQ(boundedSampleCount(100.0, nan, cap), 0u) << "NaN step";
+  EXPECT_EQ(boundedSampleCount(100.0, 0.0, cap), 0u) << "zero step would divide by zero";
+  EXPECT_EQ(boundedSampleCount(100.0, -1.0, cap), 0u) << "negative step";
+  EXPECT_EQ(boundedSampleCount(0.0, 1.0, cap), 0u) << "zero length";
+  EXPECT_EQ(boundedSampleCount(-5.0, 1.0, cap), 0u) << "negative length";
+}
+
+TEST(Geometry, BoundedSampleCountClampsRatherThanOverflowing) {
+  constexpr std::size_t cap = 1000;
+  // The case that aborted the process: a length that is finite but enormous.
+  EXPECT_EQ(boundedSampleCount(1.0e12, 1.0, cap), cap);
+  EXPECT_EQ(boundedSampleCount(1.0e300, 0.5, cap), cap);
+  // Exactly at the boundary, and just inside it.
+  EXPECT_EQ(boundedSampleCount(static_cast<Scalar>(cap - 1), 1.0, cap), cap);
+  EXPECT_EQ(boundedSampleCount(static_cast<Scalar>(cap - 2), 1.0, cap), cap - 1);
+}
+
+TEST(Geometry, BoundedSampleCountIsExactOnOrdinaryGeometry) {
+  // The cap must be invisible for real inputs: a 100 m lane at 1 m spacing is
+  // 101 samples, endpoints included, which is what the callers relied on before
+  // the guard was added.
+  EXPECT_EQ(boundedSampleCount(100.0, 1.0, 1u << 16), 101u);
+  EXPECT_EQ(boundedSampleCount(50.0, 0.5, 1u << 18), 101u);
+  EXPECT_EQ(boundedSampleCount(1.5, 1.0, 1u << 16), 2u);
 }

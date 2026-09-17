@@ -168,6 +168,29 @@ inline void cumulativeArcLength(std::span<const Vec2> pts, std::span<Scalar> out
   for (std::size_t i = 1; i < pts.size(); ++i) out[i] = out[i - 1] + distance(pts[i - 1], pts[i]);
 }
 
+// How many samples to take along a polyline of length `total` at `step` spacing.
+//
+// Every caller derives `total` from point coordinates that the cache reader
+// bounds by count but not by magnitude, so `total / step` is attacker-controlled
+// and the result goes straight to reserve(). Left unbounded that is an unbounded
+// allocation, and it aborts the process two different ways depending on how big
+// it gets: out-of-memory under a sanitiser, or an uncaught std::length_error
+// once it passes max_size(). The fuzzer found both, in resample() and in
+// ReferencePath::build() respectively, which is why the guard lives in one place
+// now rather than at each call site.
+//
+// Returns 0 when the geometry is unusable, so callers branch once on that rather
+// than repeating the finiteness and positivity checks. `cap` is a per-caller
+// ceiling chosen so real map data cannot reach it.
+[[nodiscard]] inline std::size_t boundedSampleCount(Scalar total, Scalar step, std::size_t cap) {
+  if (!std::isfinite(total) || !std::isfinite(step)) return 0;
+  if (!(step > kEps) || !(total >= kEps)) return 0;
+  const Scalar raw = std::floor(total / step);
+  if (!(raw >= 0.0)) return 0;
+  if (raw >= static_cast<Scalar>(cap - 1)) return cap;
+  return static_cast<std::size_t>(raw) + 1;
+}
+
 // Discrete curvature at interior points from three consecutive samples, using
 // the circumradius of the triangle they form. Endpoints copy their neighbour.
 // Chosen over finite-differencing heading because it does not need the heading

@@ -20,19 +20,11 @@ std::vector<Vec2> resample(const std::vector<Vec2>& in, Scalar step) {
   cumulativeArcLength(in, cum);
   const Scalar total = cum.back();
 
-  // `total` is derived from point coordinates, which the cache reader bounds by
-  // count but not by magnitude, so it is attacker-controlled. Both guards below
-  // are load-bearing and neither subsumes the other: a non-finite total makes the
-  // cast to size_t undefined, and a merely enormous but finite one makes reserve()
-  // abort the process on an out-of-memory allocation. Found by fuzz_lane_graph,
-  // which drove this to a single 0x6ffffffff0-byte reserve.
-  if (!std::isfinite(total) || total < kEps) return {in.front(), in.back()};
-  if (!(step > kEps)) return {in.front(), in.back()};
-
-  const Scalar raw = std::floor(total / step);
-  const auto n = raw >= static_cast<Scalar>(kMaxLaneSamples - 1)
-                     ? kMaxLaneSamples
-                     : static_cast<std::size_t>(std::max(Scalar{1.0}, raw)) + 1;
+  // `total` comes from unchecked point coordinates. See boundedSampleCount().
+  // Found by fuzz_lane_graph, which drove this to a single 0x6ffffffff0-byte
+  // reserve before the bound existed.
+  const std::size_t n = boundedSampleCount(total, step, kMaxLaneSamples);
+  if (n < 2) return {in.front(), in.back()};
   std::vector<Vec2> out;
   out.reserve(n);
   std::size_t seg = 0;

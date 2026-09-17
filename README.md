@@ -99,7 +99,7 @@ corrected for the number of things tested and confirmed on data the search never
 | The two path optimizers, on identical problems | iLQR is **6.9x** faster than OSQP, removes 55.6% of the cost against 30.3%, and succeeds 86.2% of the time against 59.3% |
 | Restricting the off-road map to the route corridor | **6.3x** faster overall, because a 1.6 MB map fits in cache and a 10 MB one does not |
 | The human driver, scored by the same rules | 0.90% collision, 0.06% off-road — against this planner's 5.20% and 11.37% |
-| Tests | **214** — 49 C++, 165 Python |
+| Tests | **217** — 52 C++, 165 Python |
 
 That last row is the one to read first. Every rate this project reports sits next to the
 same rate computed on the real human's driving through the identical scoring code. Without

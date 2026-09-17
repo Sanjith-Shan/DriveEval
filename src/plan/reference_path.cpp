@@ -6,6 +6,12 @@
 namespace drive::plan {
 namespace {
 
+// A reference path is sampled at opts.step (0.5 m by default), so this ceiling
+// corresponds to a route roughly 130 km long. Real routes here are under 500 m.
+// It exists only to bound an allocation sized from unchecked geometry.
+constexpr std::size_t kMaxReferenceSamples = 1u << 18;
+
+
 // Hermite-style smoothstep, zero derivative at both ends, so a lane change
 // blends in and out without a curvature step at the seam.
 Scalar smoothstep(Scalar t) {
@@ -82,7 +88,11 @@ ReferencePath ReferencePath::build(const map::LaneGraph& graph, const map::Route
   cumulativeArcLength(pts, cum);
   const Scalar total = cum.back();
   if (total < opts.step * 2.0) return out;
-  const auto n = static_cast<std::size_t>(std::floor(total / opts.step)) + 1;
+  // A route concatenates lane centrelines, so `total` inherits their unchecked
+  // coordinates. See boundedSampleCount(). The fuzzer reached this one as an
+  // uncaught std::length_error out of reserve() rather than as an OOM.
+  const std::size_t n = boundedSampleCount(total, opts.step, kMaxReferenceSamples);
+  if (n < 2) return out;
   out.points_.reserve(n);
   out.speed_prior_.reserve(n);
   out.lane_at_.reserve(n);
