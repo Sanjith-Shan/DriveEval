@@ -195,3 +195,54 @@ TEST(Route, TurnPenaltyChangesTheChosenRoute) {
   ASSERT_TRUE(b.ok());
   EXPECT_LT(a.cost, b.cost) << "a dearer lane change must cost more on a route that needs one";
 }
+
+TEST(Route, HugeLaneCoordinatesDoNotExhaustMemory) {
+  // Regression for an out-of-memory abort found by fuzz_lane_graph. The cache
+  // reader bounds how MANY lane points a shard may carry but not how large their
+  // coordinates are, so a shard with enormous coordinates produced an arc length
+  // of ~1e12 m and resample() reserved 0x6ffffffff0 bytes in one call.
+  //
+  // The assertion is simply that build() returns. Before the fix this test does
+  // not fail, it aborts the process, which is the point: an unbounded allocation
+  // derived from unchecked input is a denial of service, not a wrong answer.
+  test::ScenarioBuilder b("huge", 20);
+  test::LaneSpec l;
+  l.centerline.emplace_back(0.0F, 0.0F);
+  l.centerline.emplace_back(1.0e12F, 0.0F);
+  b.addLane(l);
+  test::AgentSpec ego;
+  for (int t = 0; t < 20; ++t) ego.states.push_back({0.0F, 0.0F, 0.0F, 1, 0, 1});
+  b.addAgent(ego).ego(0);
+
+  const auto buf = b.shard();
+  auto shard = io::ShardReader::fromBuffer(buf);
+  ASSERT_TRUE(shard);
+  auto sv = shard->scenario(0);
+  const auto g = map::LaneGraph::build(*sv);
+  ASSERT_EQ(g.size(), 1u);
+  EXPECT_LE(g.lane(0).points.size(), 1u << 16)
+      << "the sample count must stay bounded however long the lane claims to be";
+  EXPECT_GE(g.lane(0).points.size(), 2u);
+}
+
+TEST(Route, NonFiniteLaneCoordinatesAreRejectedNotCast) {
+  // The other half of the same guard. A non-finite arc length makes the cast to
+  // size_t undefined behaviour rather than merely huge, so UBSan in CI would
+  // catch this one where it would not catch the case above.
+  test::ScenarioBuilder b("nan", 20);
+  test::LaneSpec l;
+  l.centerline.emplace_back(0.0F, 0.0F);
+  l.centerline.emplace_back(std::numeric_limits<float>::infinity(), 0.0F);
+  b.addLane(l);
+  test::AgentSpec ego;
+  for (int t = 0; t < 20; ++t) ego.states.push_back({0.0F, 0.0F, 0.0F, 1, 0, 1});
+  b.addAgent(ego).ego(0);
+
+  const auto buf = b.shard();
+  auto shard = io::ShardReader::fromBuffer(buf);
+  ASSERT_TRUE(shard);
+  auto sv = shard->scenario(0);
+  const auto g = map::LaneGraph::build(*sv);
+  ASSERT_EQ(g.size(), 1u);
+  EXPECT_EQ(g.lane(0).points.size(), 2u) << "a non-finite lane falls back to its endpoints";
+}

@@ -5,7 +5,7 @@
 // construction proved the bounds. That contract is only safe if construction
 // really does reject every malformed input, which is what this checks.
 //
-//   cmake -S . -B build-fuzz -DSB_BUILD_FUZZ=ON -DCMAKE_CXX_COMPILER=clang++
+//   cmake -S . -B build-fuzz -DDE_BUILD_FUZZ=ON -DCMAKE_CXX_COMPILER=clang++
 //   ./build-fuzz/fuzz_cache_reader -max_total_time=120 fuzz/corpus
 #include <cstddef>
 #include <cstdint>

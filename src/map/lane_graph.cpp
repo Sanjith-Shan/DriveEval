@@ -6,6 +6,11 @@
 namespace drive::map {
 namespace {
 
+// A lane resampled at 1 m would have to be 65 km long to reach this, so the cap
+// cannot fire on real map data. It exists only to bound an allocation whose size
+// is derived from unchecked input. See the comment in resample().
+constexpr std::size_t kMaxLaneSamples = 1u << 16;
+
 // Resample a polyline at a fixed arc-length step, keeping the first and last
 // points. Lanes arrive at irregular spacing and short lanes can carry as few as
 // two points, so the step is clamped to produce at least two samples.
@@ -14,9 +19,20 @@ std::vector<Vec2> resample(const std::vector<Vec2>& in, Scalar step) {
   std::vector<Scalar> cum(in.size());
   cumulativeArcLength(in, cum);
   const Scalar total = cum.back();
-  if (total < kEps) return {in.front(), in.back()};
 
-  const auto n = static_cast<std::size_t>(std::max(1.0, std::floor(total / step))) + 1;
+  // `total` is derived from point coordinates, which the cache reader bounds by
+  // count but not by magnitude, so it is attacker-controlled. Both guards below
+  // are load-bearing and neither subsumes the other: a non-finite total makes the
+  // cast to size_t undefined, and a merely enormous but finite one makes reserve()
+  // abort the process on an out-of-memory allocation. Found by fuzz_lane_graph,
+  // which drove this to a single 0x6ffffffff0-byte reserve.
+  if (!std::isfinite(total) || total < kEps) return {in.front(), in.back()};
+  if (!(step > kEps)) return {in.front(), in.back()};
+
+  const Scalar raw = std::floor(total / step);
+  const auto n = raw >= static_cast<Scalar>(kMaxLaneSamples - 1)
+                     ? kMaxLaneSamples
+                     : static_cast<std::size_t>(std::max(Scalar{1.0}, raw)) + 1;
   std::vector<Vec2> out;
   out.reserve(n);
   std::size_t seg = 0;

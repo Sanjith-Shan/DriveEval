@@ -18,7 +18,7 @@ jobs:
           # teeth: the cache accessors are unchecked by design, so ASan on the
           # random-mutation test is what proves the validator is doing its job.
           - name: asan-ubsan
-            cmake_args: "-DCMAKE_BUILD_TYPE=RelWithDebInfo -DSB_SANITIZE=ON"
+            cmake_args: "-DCMAKE_BUILD_TYPE=RelWithDebInfo -DDE_SANITIZE=ON"
     steps:
       - uses: actions/checkout@v4
       - name: Install toolchain
@@ -29,7 +29,7 @@ jobs:
         run: |
           cmake -S . -B build -G Ninja \
             -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
-            -DSB_NATIVE=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+            -DDE_NATIVE=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             ${{ matrix.cmake_args }}
       - name: Build
         run: cmake --build build
@@ -51,8 +51,8 @@ jobs:
         run: |
           cmake -S . -B build-fuzz -G Ninja \
             -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
-            -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSB_BUILD_FUZZ=ON \
-            -DSB_BUILD_TESTS=OFF -DSB_ENABLE_OSQP=OFF -DSB_NATIVE=OFF \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo -DDE_BUILD_FUZZ=ON \
+            -DDE_BUILD_TESTS=OFF -DDE_ENABLE_OSQP=OFF -DDE_NATIVE=OFF \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
           cmake --build build-fuzz
       # A short run on every push, not a campaign. Long enough to catch a
@@ -77,8 +77,8 @@ jobs:
           PYTHONPATH: python
       - name: Check the C++ and Python cache layouts still agree
         run: |
-          cmake -S . -B build -G Ninja -DSB_BUILD_TESTS=OFF -DSB_ENABLE_OSQP=OFF \
-            -DSB_NATIVE=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+          cmake -S . -B build -G Ninja -DDE_BUILD_TESTS=OFF -DDE_ENABLE_OSQP=OFF \
+            -DDE_NATIVE=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
           cmake --build build --target drive_cacheinfo
           python -m pytest tests/test_cache_abi.py -q
         env:
