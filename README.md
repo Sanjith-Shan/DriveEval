@@ -4,40 +4,32 @@
 
 ---
 
-## What this actually is
+DriveEval is a motion planner for urban autonomous driving written in C++20, together with
+the harness that measures where it fails. Given a recorded traffic scene — a lane-level map
+and the trajectories of the surrounding vehicles, cyclists and pedestrians — the planner
+searches the road network for a route, samples 60 candidate paths around it, scores each
+against 13 cost terms, and refines the best one into a dynamically feasible trajectory. It
+completes a planning cycle in 0.8 ms at the median with no heap allocation.
 
-Self-driving cars are hard to evaluate. You can run one through a thousand recorded
-situations and count the crashes, but a crash count tells you almost nothing useful. It
-does not tell you *what kind* of situation the car struggles with, and it does not tell you
-whether the number you measured is real or just an artifact of how you ran the test.
+The planner is deliberately classical and is not competitive with a production system. It
+exists to be a subject with known behaviour that the harness can measure, and the harness
+is the contribution. It replays scenes from the Argoverse 2 validation split under two
+agent models, writes per-scene metrics into DuckDB alongside a description of the situation
+rather than the outcome, and then searches for the conditions under which failures occur.
+The output is not a ranked list of bad scenes but a small set of situation classes: three of
+them account for 69% of all at-fault collisions.
 
-DriveEval is two programs that answer those two questions.
-
-**The first is a driver.** Given a real recorded traffic scene — a map, and every car,
-cyclist and pedestrian in it — it decides what the car should do. It picks a route through
-the road network, generates a few hundred possible paths, scores each one on how safe,
-smooth and useful it is, and smooths the winner into something a real car could physically
-drive. It does this in under a millisecond, ten times a second, in C++.
-
-**The second is the part that matters.** It runs that driver through 19,763 real scenes,
-records everything that happened in each one, and then asks the data a question most
-evaluation tools never ask: *what do the failures have in common?*
-
-The answer is not a list of the 200 worst scenes. It is a small number of **situation
-types**, like "turning left across traffic when someone is already close." In this project
-three such types account for **69% of all at-fault collisions**. That is something you can
-act on. A list of 200 scenes is not.
-
-**Why it is built this way.** The driver is intentionally simple and is not competitive
-with a real self-driving system. It is not supposed to be. It exists to be something with
-known flaws that you can point the measurement tool at. The measurement tool is the
-contribution.
+That distinction is the point. Counting collisions establishes that a planner fails.
+Identifying that its failures concentrate in a specific geometry establishes what to change,
+and separating a genuine defect from an artifact of the evaluation method is most of the
+work. The three findings below came out of measuring rather than counting, and two of them
+run against what the method would have predicted.
 
 ![A planned scenario](docs/figures/scenario.png)
 
-*One scene. Grey boxes are other vehicles, the faint blue fan is the few hundred paths
-considered, the solid blue line is what the car actually drove, and the dashed black line
-is what the real human driver did in the recording.*
+*One scene. Grey boxes are other vehicles, the faint blue fan is the sampled candidate
+paths, the solid blue line is the trajectory driven closed-loop, and the dashed black line
+is the human's trajectory from the recording.*
 
 ---
 
@@ -46,44 +38,39 @@ is what the real human driver did in the recording.*
 Everything below is measured, not estimated. The full set, with confidence intervals and
 the results that failed to reproduce, is in [`docs/FINDINGS.md`](docs/FINDINGS.md).
 
-### 1. How you run the test changes the answer
+### 1. The agent model changes the result, in the opposite direction to expectation
 
-There are two ways to replay a recorded scene. In the easy way, the other cars just repeat
-what they did in the recording and ignore your car completely. In the hard way, they
-actually react to it.
+A recorded scene can be replayed two ways. Under log-replay the surrounding agents repeat
+their recorded tracks and ignore the ego entirely; under a reactive model they respond to it.
+Log-replay is normally assumed to flatter a planner. **It does the opposite here.**
 
-Everyone expects the easy way to make a planner look better than it is. **It does the
-opposite.** Total collisions are **1.65x higher** when the other cars ignore you, because
-they drive straight into you through no fault of your own. Collisions that were genuinely
-the planner's fault do not change at all.
+Total collisions are **1.65x higher** under log-replay, because agents that cannot see the
+ego drive into it. The at-fault rate is statistically unchanged. The split is 4.02% of
+collisions caused by another agent under log-replay against 0.38% under reactive agents, and
+it is invisible unless both models are run and fault is attributed rather than counted.
 
-That distinction — 4.02% of collisions are someone driving into you, versus 0.38% when they
-can see you — is invisible unless you measure both ways and separate fault from blame. Most
-benchmarks do neither.
+### 2. Ranking by human-likeness inverts the safety ranking
 
-### 2. Measuring "does it drive like a human" gives you the wrong answer
+Scoring a planner by how closely it reproduces the human's trajectory is a common proxy for
+quality. Four configurations were ranked that way and then ranked again on the safety suite.
+**The two orderings are exact inverses.**
 
-A common way to score a self-driving planner is to check how closely it matches what the
-human driver actually did. DriveEval ranked four planners that way, then ranked them again
-on safety. **The two rankings came out exactly backwards.**
+The mechanism is not subtle. The configuration closest to the human is pure pursuit, which
+follows the road and reasons about no obstacle at all. It matches well precisely because the
+human never had to avoid anything either, and it **collides in 52% of its scenes.**
+Trajectory similarity is therefore reported in its own section and never ranks a
+configuration on its own.
 
-The reason is simple once you see it. The planner that best matched the human is one that
-blindly follows the road and never reacts to anything. It matched well because the human in
-the recording never had to avoid anything either. It also **crashed in 52% of its scenes.**
+### 3. Failures are concentrated rather than diffuse
 
-Matching a human is a similarity score, not a correctness score. This project reports it in
-its own section and never uses it alone to rank anything.
+Instead of ranking individual scenes, the harness searches for conjunctions of situation
+features that predict failure and confirms each candidate on a held-out half of the data it
+never searched. The top three classes cover **69%** of at-fault collisions, and the strongest
+single class raises the failure rate **3.9x** over the baseline.
 
-### 3. Failures come in a few shapes, not a thousand
-
-Rather than ranking individual bad scenes, DriveEval searches for *combinations of
-conditions* that predict failure, then checks each candidate on a held-out half of the data
-it never searched. The top three cover **69%** of at-fault collisions. The strongest single
-one makes failure **3.9x** more likely than the baseline rate.
-
-The check matters as much as the finding. Search hard enough through 5,738 possible
-combinations and you will find something impressive by pure chance, so every result is
-corrected for the number of things tested and confirmed on data the search never saw.
+The correction matters as much as the result. Searching 5,738 conjunctions will surface
+something striking by chance alone, so every finding is corrected for the number of
+candidates tested and reported only on the confirmation split.
 
 ---
 
