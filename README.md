@@ -1,6 +1,6 @@
 # DriveEval
 
-**A self-driving motion planner, and the tool that finds out where it fails.**
+**A self-driving motion planner system + evaluation tool**
 
 ---
 
@@ -10,20 +10,6 @@ and the trajectories of the surrounding vehicles, cyclists and pedestrians — t
 searches the road network for a route, samples 60 candidate paths around it, scores each
 against 13 cost terms, and refines the best one into a dynamically feasible trajectory. It
 completes a planning cycle in 0.8 ms at the median with no heap allocation.
-
-The planner is deliberately classical and is not competitive with a production system. It
-exists to be a subject with known behaviour that the harness can measure, and the harness
-is the contribution. It replays scenes from the Argoverse 2 validation split under two
-agent models, writes per-scene metrics into DuckDB alongside a description of the situation
-rather than the outcome, and then searches for the conditions under which failures occur.
-The output is not a ranked list of bad scenes but a small set of situation classes: three of
-them account for 69% of all at-fault collisions.
-
-That distinction is the point. Counting collisions establishes that a planner fails.
-Identifying that its failures concentrate in a specific geometry establishes what to change,
-and separating a genuine defect from an artifact of the evaluation method is most of the
-work. The three findings below came out of measuring rather than counting, and two of them
-run against what the method would have predicted.
 
 ![A planned scenario](docs/figures/scenario.png)
 
